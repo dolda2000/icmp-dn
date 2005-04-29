@@ -198,10 +198,8 @@ int main(int argc, char **argv)
 	/* XXX: The correct source address needs to be filled in from
 	 * the request's destination address. */
 	ret = sendto(s, buf, datalen + sizeof(rep), 0, (struct sockaddr *)&name, namelen);
-	if(ret < 0) {
+	if(ret < 0)
 	    syslog(LOG_WARNING, "error in sending reply: %m");
-	    exit(1);
-	}
     }
     
     close(s);
