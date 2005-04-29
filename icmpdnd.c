@@ -24,6 +24,7 @@
 #include <syslog.h>
 #include <time.h>
 #include <sys/socket.h>
+#include <sys/poll.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netinet/ip.h>
@@ -130,14 +131,16 @@ void cksum(void *hdr, size_t len)
 
 int main(int argc, char **argv)
 {
-    int ret;
-    int c, s, namelen, datalen;
+    int i, n, ret;
+    int c, cs, s4, s6, namelen, datalen;
     int daemonize, ttl;
     unsigned char buf[65536];
-    struct sockaddr_in name;
+    struct sockaddr_storage name;
     struct reqhdr req;
     struct rephdr rep;
     struct iphdr iphdr;
+    size_t hdrlen;
+    struct pollfd pfd[2];
     time_t curtime, lasterr;
     
     daemonize = 1;
@@ -159,27 +162,39 @@ int main(int argc, char **argv)
 	}
     }
     
-    if((s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0) {
-	perror("could not create raw socket");
+    s4 = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+    s6 = socket(PF_INET6, SOCK_RAW, IPPROTO_ICMP);
+    if((s4 < 0) && (s6 < 0)) {
+	perror("could not open raw socket");
 	exit(1);
     }
     
     if(daemonize)
 	daemon(0, 0);
     
-    openlog("icmpdnd", LOG_PID, LOG_DAEMON);
+    openlog("icmpdnd", LOG_PID | LOG_NDELAY, LOG_DAEMON);
     
     alive = 1;
     lasterr = 0;
     while(alive) {
-	namelen = sizeof(name);
-	ret = recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr *)&name, &namelen);
-	
+	n = 0;
+	if(s4 >= 0) {
+	    pfd[n].fd = s4;
+	    pfd[n].events = POLLIN;
+	    n++;
+	}
+	if(s6 >= 0) {
+	    pfd[n].fd = s6;
+	    pfd[n].events = POLLIN;
+	    n++;
+	}
+	ret = poll(pfd, n, -1);
+
 	curtime = time(NULL);
 	if(ret < 0) {
 	    if(errno == EINTR)
 		continue;
-	    syslog(LOG_ERR, "error in receiving datagram: %m");
+	    syslog(LOG_ERR, "error while polling sockets: %m");
 	    if(lasterr == curtime) {
 		syslog(LOG_CRIT, "exiting due to repeated errors");
 		exit(1);
@@ -187,31 +202,56 @@ int main(int argc, char **argv)
 	    lasterr = curtime;
 	}
 	
-	if(ret < sizeof(iphdr) + sizeof(req))
-	    continue;
-	memcpy(&iphdr, buf, sizeof(iphdr));
-	memcpy(&req, buf + sizeof(iphdr), sizeof(req));
-	if(iphdr.protocol != IPPROTO_ICMP)
-	    continue;
-	if(req.type != ICMP_NAMEREQ)
-	    continue;
-	rep.type = ICMP_NAMEREP;
-	rep.code = 0;
-	rep.id = req.id;
-	rep.seq = req.seq;
-	rep.ttl = htonl(ttl);
-	memcpy(buf, &rep, sizeof(rep));
-	datalen = filldn(buf + sizeof(rep));
+	for(i = 0; i < n; i++) {
+	    if((pfd[i].revents & POLLIN) == 0)
+		continue;
+	    cs = pfd[i].fd;
+	    namelen = sizeof(name);
+	    memset(&name, 0, sizeof(name));
+	    ret = recvfrom(cs, buf, sizeof(buf), 0, (struct sockaddr *)&name, &namelen);
+	    if(ret < 0) {
+		syslog(LOG_WARNING, "error while receiving datagram: %m");
+		continue;
+	    }
+	    
+	    if(cs == s4) {
+		if(ret < sizeof(iphdr) + sizeof(req))
+		    continue;
+		hdrlen = sizeof(iphdr);
+		memcpy(&iphdr, buf, sizeof(iphdr));
+		if(iphdr.protocol != IPPROTO_ICMP)
+		    continue;
+	    } else if(cs == s6) {
+		if(ret < sizeof(req))
+		    continue;
+		((struct sockaddr_in6 *)&name)->sin6_port = 0;
+		hdrlen = 0;
+	    } else {
+		syslog(LOG_CRIT, "strangeness!");
+		abort();
+	    }
+	    memcpy(&req, buf + hdrlen, sizeof(req));
+	    if(req.type != ICMP_NAMEREQ)
+		continue;
+	    rep.type = ICMP_NAMEREP;
+	    rep.code = 0;
+	    rep.id = req.id;
+	    rep.seq = req.seq;
+	    rep.ttl = htonl(ttl);
+	    memcpy(buf, &rep, sizeof(rep));
+	    datalen = filldn(buf + sizeof(rep));
 	
-	cksum(buf, datalen + sizeof(rep));
+	    cksum(buf, datalen + sizeof(rep));
 	
-	/* XXX: The correct source address needs to be filled in from
-	 * the request's destination address. */
-	ret = sendto(s, buf, datalen + sizeof(rep), 0, (struct sockaddr *)&name, namelen);
-	if(ret < 0)
-	    syslog(LOG_WARNING, "error in sending reply: %m");
+	    /* XXX: The correct source address needs to be filled in from
+	     * the request's destination address. */
+	    ret = sendto(cs, buf, datalen + sizeof(rep), 0, (struct sockaddr *)&name, namelen);
+	    if(ret < 0)
+		syslog(LOG_WARNING, "error in sending reply: %m");
+	}
     }
     
-    close(s);
+    close(s4);
+    close(s6);
     return(0);
 }
