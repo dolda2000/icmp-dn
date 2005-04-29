@@ -196,7 +196,7 @@ int main(int argc, char **argv)
 	    pfd.events = POLLIN;
 	    gettimeofday(&tvc, NULL);
 	    elapsed = ((tvc.tv_sec - tvb.tv_sec) * 1000) + ((tvc.tv_usec - tvb.tv_usec) / 1000);
-	    if(elapsed > timeout) {
+	    if(elapsed >= timeout) {
 		fprintf(stderr, "idnlookup: timeout\n");
 		exit(1);
 	    }
