@@ -132,13 +132,16 @@ void cksum(void *hdr, size_t len)
 int main(int argc, char **argv)
 {
     int i, n, ret;
-    int c, cs, s4, s6, namelen, datalen;
+    int c, cs, s4, s6, datalen;
     int daemonize, ttl;
     unsigned char buf[65536];
     struct sockaddr_storage name;
     struct reqhdr req;
     struct rephdr rep;
     struct iphdr iphdr;
+    struct msghdr mhdr;
+    struct iovec iov;
+    char cmsgbuf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
     size_t hdrlen;
     struct pollfd pfd[2];
     time_t curtime, lasterr;
@@ -167,6 +170,13 @@ int main(int argc, char **argv)
     if((s4 < 0) && (s6 < 0)) {
 	perror("could not open raw socket");
 	exit(1);
+    }
+    if(s6 >= 0) {
+	i = 1;
+	if(setsockopt(s6, IPPROTO_IPV6, IPV6_PKTINFO, &i, sizeof(i))) {
+	    perror("could not set IPV6_PKTINFO sockopt");
+	    exit(1);
+	}
     }
     
     if(daemonize)
@@ -206,9 +216,18 @@ int main(int argc, char **argv)
 	    if((pfd[i].revents & POLLIN) == 0)
 		continue;
 	    cs = pfd[i].fd;
-	    namelen = sizeof(name);
 	    memset(&name, 0, sizeof(name));
-	    ret = recvfrom(cs, buf, sizeof(buf), 0, (struct sockaddr *)&name, &namelen);
+	    
+	    iov.iov_len = sizeof(buf);
+	    iov.iov_base = buf;
+	    mhdr.msg_name = &name;
+	    mhdr.msg_namelen = sizeof(name);
+	    mhdr.msg_iov = &iov;
+	    mhdr.msg_iovlen = 1;
+	    mhdr.msg_control = cmsgbuf;
+	    mhdr.msg_controllen = sizeof(cmsgbuf);
+	    
+	    ret = recvmsg(cs, &mhdr, 0);
 	    if(ret < 0) {
 		syslog(LOG_WARNING, "error while receiving datagram: %m");
 		continue;
@@ -221,11 +240,14 @@ int main(int argc, char **argv)
 		memcpy(&iphdr, buf, sizeof(iphdr));
 		if(iphdr.protocol != IPPROTO_ICMP)
 		    continue;
+		mhdr.msg_control = NULL;
+		mhdr.msg_controllen = 0;
 	    } else if(cs == s6) {
 		if(ret < sizeof(req))
 		    continue;
 		((struct sockaddr_in6 *)&name)->sin6_port = 0;
 		hdrlen = 0;
+		/* Just keep mhdr.msg_control. */
 	    } else {
 		syslog(LOG_CRIT, "strangeness!");
 		abort();
@@ -242,10 +264,12 @@ int main(int argc, char **argv)
 	    datalen = filldn(buf + sizeof(rep));
 	
 	    cksum(buf, datalen + sizeof(rep));
-	
-	    /* XXX: The correct source address needs to be filled in from
-	     * the request's destination address. */
-	    ret = sendto(cs, buf, datalen + sizeof(rep), 0, (struct sockaddr *)&name, namelen);
+	    
+	    iov.iov_len = sizeof(rep) + datalen;
+	    iov.iov_base = buf;
+	    mhdr.msg_iov = &iov;
+	    mhdr.msg_iovlen = 1;
+	    ret = sendmsg(cs, &mhdr, 0);
 	    if(ret < 0)
 		syslog(LOG_WARNING, "error in sending reply: %m");
 	}
