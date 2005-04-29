@@ -73,11 +73,13 @@ void printdn(FILE *f, unsigned char *dnbuf, size_t size)
 		fprintf(stderr, "domain name decompression not implemented, aborting\n");
 		exit(1);
 	    }
-	    printf("%.*s.", (int)*p, p + 1);
+	    fprintf(f, "%.*s", (int)*p, p + 1);
 	    p += 1 + (int)*p;
+	    if(*p != 0)
+		fprintf(f, ".");
 	}
 	p++;
-	printf("\n");
+	fprintf(f, "\n");
     }
 }
 
