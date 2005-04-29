@@ -1,5 +1,6 @@
 /*
  *  idnlookup - ICMP Domain Name lookup utility for Linux
+ *  Should be installed SUID root, even though I don't know if it's secure yet. :-)
  *  Copyright (C) 2005 Fredrik Tolf <fredrik@dolda2000.com>
  *  
  *  This program is free software; you can redistribute it and/or modify
@@ -272,3 +273,9 @@ int main(int argc, char **argv)
     
     return(0);
 }
+
+/*
+ * Local Variables:
+ * compile-command: "gcc -Wall -g -o idnlookup idnlookup.c"
+ * End:
+ */
