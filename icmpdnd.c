@@ -22,6 +22,7 @@
 #include <string.h>
 #include <errno.h>
 #include <syslog.h>
+#include <time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -137,6 +138,7 @@ int main(int argc, char **argv)
     struct reqhdr req;
     struct rephdr rep;
     struct iphdr iphdr;
+    time_t curtime, lasterr;
     
     daemonize = 1;
     ttl = 3600;
@@ -168,15 +170,23 @@ int main(int argc, char **argv)
     openlog("icmpdnd", LOG_PID, LOG_DAEMON);
     
     alive = 1;
+    lasterr = 0;
     while(alive) {
 	namelen = sizeof(name);
 	ret = recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr *)&name, &namelen);
+	
+	curtime = time(NULL);
 	if(ret < 0) {
 	    if(errno == EINTR)
 		continue;
 	    syslog(LOG_ERR, "error in receiving datagram: %m");
-	    exit(1);
+	    if(lasterr == curtime) {
+		syslog(LOG_CRIT, "exiting due to repeated errors");
+		exit(1);
+	    }
+	    lasterr = curtime;
 	}
+	
 	if(ret < sizeof(iphdr) + sizeof(req))
 	    continue;
 	memcpy(&iphdr, buf, sizeof(iphdr));
