@@ -164,7 +164,6 @@ int main(int argc, char **argv)
     }
     
     memset(&aihint, 0, sizeof(aihint));
-    aihint.ai_family = PF_INET; /* Only IPv4 for now. */
     aihint.ai_socktype = SOCK_RAW;
     aihint.ai_protocol = IPPROTO_ICMP;
     ret = getaddrinfo(argv[optind], NULL, &aihint, &ai);
