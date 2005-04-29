@@ -1,6 +1,6 @@
 /*
  *  icmpdnd - ICMP Domain Name responder daemon for Linux
- *  Copyright (C) 2004 Fredrik Tolf <fredrik@dolda2000.com>
+ *  Copyright (C) 2005 Fredrik Tolf <fredrik@dolda2000.com>
  *  
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <syslog.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -52,8 +53,6 @@ struct rephdr {
 
 #define ICMP_NAMEREQ 37
 #define ICMP_NAMEREP 38
-
-#define TTL 3600
 
 volatile int alive;
 
@@ -131,17 +130,42 @@ void cksum(void *hdr, size_t len)
 int main(int argc, char **argv)
 {
     int ret;
-    int s, namelen, datalen;
+    int c, s, namelen, datalen;
+    int daemonize, ttl;
     unsigned char buf[65536];
     struct sockaddr_in name;
     struct reqhdr req;
     struct rephdr rep;
     struct iphdr iphdr;
-
+    
+    daemonize = 1;
+    ttl = 3600;
+    while((c = getopt(argc, argv, "nht:")) != -1) {
+	switch(c) {
+	case 't':
+	    ttl = atoi(optarg);
+	    break;
+	case 'n':
+	    daemonize = 0;
+	    break;
+	case 'h':
+	case '?':
+	case ':':
+	default:
+	    fprintf(stderr, "usage: icmpdnd [-n]");
+	    exit((c == 'h')?0:1);
+	}
+    }
+    
     if((s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0) {
 	perror("could not create raw socket");
 	exit(1);
     }
+    
+    if(daemonize)
+	daemon(0, 0);
+    
+    openlog("icmpdnd", LOG_PID, LOG_DAEMON);
     
     alive = 1;
     while(alive) {
@@ -150,32 +174,32 @@ int main(int argc, char **argv)
 	if(ret < 0) {
 	    if(errno == EINTR)
 		continue;
-	    perror("recvfrom");
+	    syslog(LOG_ERR, "error in receiving datagram: %m");
 	    exit(1);
 	}
-	if(ret < sizeof(iphdr))
-	    continue;
-	memcpy(&iphdr, buf, sizeof(iphdr));
-	if(iphdr.protocol != IPPROTO_ICMP)
-	    continue;
 	if(ret < sizeof(iphdr) + sizeof(req))
 	    continue;
+	memcpy(&iphdr, buf, sizeof(iphdr));
 	memcpy(&req, buf + sizeof(iphdr), sizeof(req));
+	if(iphdr.protocol != IPPROTO_ICMP)
+	    continue;
 	if(req.type != ICMP_NAMEREQ)
 	    continue;
 	rep.type = ICMP_NAMEREP;
 	rep.code = 0;
 	rep.id = req.id;
 	rep.seq = req.seq;
-	rep.ttl = htonl(TTL);
+	rep.ttl = htonl(ttl);
 	memcpy(buf, &rep, sizeof(rep));
 	datalen = filldn(buf + sizeof(rep));
-
+	
 	cksum(buf, datalen + sizeof(rep));
-
+	
+	/* XXX: The correct source address needs to be filled in from
+	 * the request's destination address. */
 	ret = sendto(s, buf, datalen + sizeof(rep), 0, (struct sockaddr *)&name, namelen);
 	if(ret < 0) {
-	    perror("sendto");
+	    syslog(LOG_WARNING, "error in sending reply: %m");
 	    exit(1);
 	}
     }
