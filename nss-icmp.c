@@ -20,7 +20,7 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
 	char retaddr[16];
     } *retbuf;
     char addrbuf[1024];
-    int an;
+    int an, thislen;
     char *p, *p2, *p3;
     u_int8_t *ap;
     pid_t child;
@@ -97,14 +97,17 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
     p3 = buffer + sizeof(*retbuf);
     while((p2 = strchr(p, '\n')) != NULL) {
 	*p2 = 0;
-	if((p3 - buffer) + (p2 - p) + 1 > buflen) {
+	thislen = p2 - p;
+	if(thislen == 0)
+	    continue;
+	if((p3 - buffer) + thislen + 1 > buflen) {
 	    *errnop = ENOMEM;
 	    *h_errnop = NETDB_INTERNAL;
 	    return(NSS_STATUS_UNAVAIL);
 	}
-	memcpy(p3, p, (p2 - p) + 1);
+	memcpy(p3, p, thislen + 1);
 	retbuf->aliaslist[an] = p3;
-	p3 += (p2 - p) + 1;
+	p3 += thislen + 1;
 	p = p2 + 1;
 	if(++an == 16) {
 	    *errnop = ENOMEM;
@@ -113,7 +116,7 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
 	}
     }
     if(an == 0) {
-	*h_errnop = TRY_AGAIN; /* Is this correct? */
+	*h_errnop = TRY_AGAIN; /* XXX: Is this correct? */
 	return(NSS_STATUS_NOTFOUND);
     }
     retbuf->aliaslist[an] = NULL;
