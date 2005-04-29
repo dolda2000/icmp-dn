@@ -136,13 +136,18 @@ int main(int argc, char **argv)
     struct pollfd pfd;
     struct timeval tvb, tvc;
     struct sockaddr_storage name;
-    int timeout, elapsed;
+    int timeout, dispttl;
+    int elapsed;
     
     timeout = 3000;
-    while((c = getopt(argc, argv, "ht:")) != -1) {
+    dispttl = 0;
+    while((c = getopt(argc, argv, "hTt:")) != -1) {
 	switch(c) {
 	case 't':
 	    timeout = atoi(optarg);
+	    break;
+	case 'T':
+	    dispttl = 1;
 	    break;
 	case 'h':
 	case '?':
@@ -236,6 +241,8 @@ int main(int argc, char **argv)
 	    }
 	}
 	
+	if(dispttl)
+	    printf("%i\n", ntohl(rep.ttl));
 	printdn(stdout, buf + sizeof(iphdr) + sizeof(rep), ret - sizeof(iphdr) - sizeof(rep));
 	
 	close(s);
