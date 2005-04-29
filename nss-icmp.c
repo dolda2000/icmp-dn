@@ -178,9 +178,13 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
 	return(NSS_STATUS_UNAVAIL);
     }
     
-    for(cc = cache; cc != NULL; cc = cc->next) {
-	if((cc->af == af) && (cc->addrlen == len) && !memcmp(cc->addr, addr, len))
-	    break;
+    if(usecache) {
+	for(cc = cache; cc != NULL; cc = cc->next) {
+	    if((cc->af == af) && (cc->addrlen == len) && !memcmp(cc->addr, addr, len))
+		break;
+	}
+    } else {
+	cc = NULL;
     }
     
     if(cc == NULL) {
@@ -272,7 +276,8 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
 	    }
 	}
 	if(an == 0) {
-	    cachenotfound(addr, len, af);
+	    if(usecache)
+		cachenotfound(addr, len, af);
 	    *h_errnop = TRY_AGAIN; /* XXX: Is this correct? */
 	    return(NSS_STATUS_NOTFOUND);
 	}
@@ -311,7 +316,7 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
     result->h_addrtype = af;
     result->h_length = len;
     
-    if(cc == NULL)
+    if((cc == NULL) && usecache)
 	updatecache(result);
     
     *h_errnop = NETDB_SUCCESS;
