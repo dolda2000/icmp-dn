@@ -13,6 +13,11 @@
 #include <fcntl.h>
 
 #define CONFIGFILE "/etc/nss-icmp.conf"
+#if 0
+#define DEBUGP(format...) fprintf(stderr, "nss-icmp: " format);
+#else
+#define DEBUGP(format...)
+#endif
 
 struct cache {
     struct cache *next, *prev;
@@ -205,6 +210,8 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
 	return(NSS_STATUS_UNAVAIL);
     }
     
+    DEBUGP("starting lookup\n");
+    
     if(usecache) {
 	expirecache();
 	for(cc = cache; cc != NULL; cc = cc->next) {
@@ -216,12 +223,14 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
     }
     
     if(cc == NULL) {
+	DEBUGP("address not in cache, looking up for real\n");
 	ap = (u_int8_t *)addr;
 	if(inet_ntop(af, addr, addrbuf, sizeof(addrbuf)) == NULL) {
 	    *errnop = errno;
 	    *h_errnop = NETDB_INTERNAL;
 	    return(NSS_STATUS_UNAVAIL);
 	}
+	DEBUGP("address is %s\n", addrbuf);
     
 	if(pipe(pfd)) {
 	    *errnop = errno;
@@ -322,6 +331,7 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
 	if(usecache)
 	    updatecache(addr, len, af, retbuf->aliaslist, ttl);
     } else {
+	DEBUGP("address found in cache\n");
 	if(cc->notfound) {
 	    *h_errnop = TRY_AGAIN; /* XXX: Is this correct? */
 	    return(NSS_STATUS_NOTFOUND);
@@ -330,22 +340,20 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
 	p3 = buffer + sizeof(*retbuf);
 	for(i = 0; cc->names[i] != NULL; i++) {
 	    thislen = strlen(cc->names[i]);
+	    DEBUGP("filling in address %s, length %i\n", cc->names[i], thislen);
 	    if((p3 - buffer) + thislen + 1 > buflen) {
 		*errnop = ENOMEM;
 		*h_errnop = NETDB_INTERNAL;
 		return(NSS_STATUS_UNAVAIL);
 	    }
 	    memcpy(p3, cc->names[i], thislen + 1);
-	    retbuf->aliaslist[an] = p3;
+	    retbuf->aliaslist[i] = p3;
 	    p3 += thislen + 1;
-	    if(++an == 16) {
-		*errnop = ENOMEM;
-		*h_errnop = NETDB_INTERNAL;
-		return(NSS_STATUS_UNAVAIL);
-	    }
 	}
+	retbuf->aliaslist[i] = NULL;
     }
     
+    DEBUGP("returning hostent\n");
     memcpy(retbuf->retaddr, addr, len);
     retbuf->addrlist[0] = retbuf->retaddr;
     retbuf->addrlist[1] = NULL;
@@ -356,5 +364,6 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
     result->h_length = len;
     
     *h_errnop = NETDB_SUCCESS;
+    DEBUGP("returning\n");
     return(NSS_STATUS_SUCCESS);
 }
