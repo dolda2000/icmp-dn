@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -20,11 +21,13 @@ struct cache {
     int af;
     int notfound;
     char **names;
+    time_t at, ttl;
 };
 
 static int inited = 0;
 static int timeout = -1;
 static int usecache = 1;
+static time_t nfttl = 300;
 static struct cache *cache = NULL;
 
 static void readconfig(void)
@@ -49,6 +52,11 @@ static void readconfig(void)
 	    if(p2 == NULL)
 		continue;
 	    timeout = atoi(p2);
+	}
+	if(!strcmp(linebuf, "ttlnotfound")) {
+	    if(p2 == NULL)
+		continue;
+	    nfttl = atoi(p2);
 	}
 	if(!strcmp(linebuf, "nocache")) {
 	    usecache = 0;
@@ -78,7 +86,7 @@ static void freecache(struct cache *cc)
     free(cc);
 }
 
-static void cachenotfound(const void *addr, socklen_t len, int af)
+static void cachenotfound(const void *addr, socklen_t len, int af, time_t ttl)
 {
     struct cache *cc;
     
@@ -97,6 +105,8 @@ static void cachenotfound(const void *addr, socklen_t len, int af)
 	memcpy(cc->addr, addr, len);
 	cc->addrlen = len;
 	cc->af = af;
+	cc->at = time(NULL);
+	cc->ttl = ttl;
 	
 	cc->notfound = 1;
 	
@@ -107,45 +117,62 @@ static void cachenotfound(const void *addr, socklen_t len, int af)
     }
 }
 
-static void updatecache(struct hostent *he)
+static void updatecache(const void *addr, socklen_t len, int af, char **names, time_t ttl)
 {
     int i;
     struct cache *cc;
     
     for(cc = cache; cc != NULL; cc = cc->next) {
-	if((cc->af == he->h_addrtype) && (cc->addrlen == he->h_length) && !memcmp(cc->addr, he->h_addr_list[0], he->h_length))
+	if((cc->af == af) && (cc->addrlen == len) && !memcmp(cc->addr, addr, len))
 	    break;
     }
     if(cc == NULL) {
 	if((cc = malloc(sizeof(*cc))) == NULL)
 	    return;
 	memset(cc, 0, sizeof(*cc));
-	if((cc->addr = malloc(he->h_length)) == NULL) {
+	if((cc->addr = malloc(len)) == NULL) {
 	    freecache(cc);
 	    return;
 	}
-	memcpy(cc->addr, he->h_addr_list[0], he->h_length);
-	cc->addrlen = he->h_length;
-	cc->af = he->h_addrtype;
+	memcpy(cc->addr, addr, len);
+	cc->addrlen = len;
+	cc->af = af;
+	cc->at = time(NULL);
+	cc->ttl = ttl;
 	
-	for(i = 0; he->h_aliases[i] != NULL; i++);
+	for(i = 0; names[i] != NULL; i++);
 	if((cc->names = malloc(sizeof(*(cc->names)) * (i + 1))) == NULL) {
 	    freecache(cc);
 	    return;
 	}
 	memset(cc->names, 0, sizeof(*(cc->names)) * (i + 1));
-	for(i = 0; he->h_aliases[i] != NULL; i++) {
-	    if((cc->names[i] = malloc(strlen(he->h_aliases[i]) + 1)) == NULL) {
+	for(i = 0; names[i] != NULL; i++) {
+	    if((cc->names[i] = malloc(strlen(names[i]) + 1)) == NULL) {
 		freecache(cc);
 		return;
 	    }
-	    strcpy(cc->names[i], he->h_aliases[i]);
+	    strcpy(cc->names[i], names[i]);
 	}
 	
 	cc->next = cache;
 	if(cache != NULL)
 	    cache->prev = cc;
 	cache = cc;
+    }
+}
+
+static void expirecache(void)
+{
+    struct cache *cc, *next;
+    time_t now;
+    
+    now = time(NULL);
+    for(cc = cache; cc != NULL; cc = next) {
+	next = cc->next;
+	if(now - cc->at > cc->ttl) {
+	    freecache(cc);
+	    continue;
+	}
     }
 }
 
@@ -158,7 +185,7 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
 	char retaddr[16];
     } *retbuf;
     char addrbuf[1024];
-    int an, thislen;
+    int an, thislen, ttl;
     char *p, *p2, *p3;
     u_int8_t *ap;
     pid_t child;
@@ -179,6 +206,7 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
     }
     
     if(usecache) {
+	expirecache();
 	for(cc = cache; cc != NULL; cc = cc->next) {
 	    if((cc->af == af) && (cc->addrlen == len) && !memcmp(cc->addr, addr, len))
 		break;
@@ -223,9 +251,9 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
 	
 	    if(timeout != -1) {
 		snprintf(timeoutbuf, sizeof(timeoutbuf), "%i", timeout);
-		execlp("idnlookup", "idnlookup", "-t", timeoutbuf, addrbuf, NULL);
+		execlp("idnlookup", "idnlookup", "-Tt", timeoutbuf, addrbuf, NULL);
 	    } else {
-		execlp("idnlookup", "idnlookup", addrbuf, NULL);
+		execlp("idnlookup", "idnlookup", "-T", addrbuf, NULL);
 	    }
 	    exit(127);
 	}
@@ -251,9 +279,17 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
 	} while(ret != 0);
 	addrbuf[rl] = 0;
 	close(pfd[0]);
-    
+	
+	if((p = strchr(addrbuf, '\n')) == NULL) {
+	    if(usecache)
+		cachenotfound(addr, len, af, nfttl);
+	    *h_errnop = TRY_AGAIN; /* XXX: Is this correct? */
+	    return(NSS_STATUS_NOTFOUND);
+	}
+	*(p++) = 0;
+	ttl = atoi(addrbuf);
+	
 	an = 0;
-	p = addrbuf;
 	p3 = buffer + sizeof(*retbuf);
 	while((p2 = strchr(p, '\n')) != NULL) {
 	    *p2 = 0;
@@ -277,11 +313,14 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
 	}
 	if(an == 0) {
 	    if(usecache)
-		cachenotfound(addr, len, af);
+		cachenotfound(addr, len, af, nfttl);
 	    *h_errnop = TRY_AGAIN; /* XXX: Is this correct? */
 	    return(NSS_STATUS_NOTFOUND);
 	}
 	retbuf->aliaslist[an] = NULL;
+	
+	if(usecache)
+	    updatecache(addr, len, af, retbuf->aliaslist, ttl);
     } else {
 	if(cc->notfound) {
 	    *h_errnop = TRY_AGAIN; /* XXX: Is this correct? */
@@ -315,9 +354,6 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
     result->h_addr_list = retbuf->addrlist;
     result->h_addrtype = af;
     result->h_length = len;
-    
-    if((cc == NULL) && usecache)
-	updatecache(result);
     
     *h_errnop = NETDB_SUCCESS;
     return(NSS_STATUS_SUCCESS);
