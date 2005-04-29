@@ -86,7 +86,7 @@ void cksum(void *hdr, size_t len)
     struct icmphdr *ih;
     u_int8_t *cb;
     int i;
-    u_int8_t b1, b2;
+    int b1, b2;
     
     ih = (struct icmphdr *)hdr;
     cb = (u_int8_t *)hdr;
@@ -98,9 +98,22 @@ void cksum(void *hdr, size_t len)
     }
     if(i & 1)
 	b1 += cb[len - 1];
+    while(1) {
+	if(b1 >= 256) {
+	    b2 += b1 >> 8;
+	    b1 &= 0xff;
+	    continue;
+	}
+	if(b2 >= 256) {
+	    b1 += b2 >> 8;
+	    b2 &= 0xff;
+	    continue;
+	}
+	break;
+    }
     cb = (u_int8_t *)&ih->checksum;
-    cb[0] = ~b1;
-    cb[1] = ~b2;
+    cb[0] = ~(u_int8_t)b1;
+    cb[1] = ~(u_int8_t)b2;
 }
 
 void usage(void)
