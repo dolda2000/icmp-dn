@@ -32,6 +32,7 @@
 #include <nss.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 
 #define CONFIGFILE "/etc/nss-icmp.conf"
 #if 0
@@ -217,6 +218,7 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
     pid_t child;
     int pfd[2];
     int rl;
+    int status;
     struct cache *cc;
     
     if(!inited) {
@@ -309,6 +311,8 @@ enum nss_status _nss_icmp_gethostbyaddr_r(const void *addr, socklen_t len, int a
 	} while(ret != 0);
 	addrbuf[rl] = 0;
 	close(pfd[0]);
+	
+	waitpid(child, &status, 0);
 	
 	if((p = strchr(addrbuf, '\n')) == NULL) {
 	    if(usecache)
