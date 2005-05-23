@@ -29,6 +29,7 @@
 #include <arpa/inet.h>
 #include <netinet/ip.h>
 #include <sys/types.h>
+#include "config.h"
 
 struct icmphdr {
     u_int8_t type;

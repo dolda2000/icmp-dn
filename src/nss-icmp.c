@@ -33,8 +33,12 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include "config.h"
 
+#ifndef	CONFIGFILE
 #define CONFIGFILE "/etc/nss-icmp.conf"
+#endif
+
 #if 0
 #define DEBUGP(format...) fprintf(stderr, "nss-icmp: " format);
 #else
