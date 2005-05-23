@@ -31,7 +31,9 @@
 #include <sys/types.h>
 #include <sys/poll.h>
 #include <sys/time.h>
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 
 struct icmphdr {
     u_int8_t type;
