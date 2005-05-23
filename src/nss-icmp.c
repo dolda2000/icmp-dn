@@ -33,7 +33,9 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 
 #ifndef	CONFIGFILE
 #define CONFIGFILE "/etc/nss-icmp.conf"
