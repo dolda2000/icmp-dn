@@ -1,0 +1,19 @@
+#!/sbin/runscript
+
+opts="start stop restart"
+
+depend() {
+    need net
+}
+
+start() {
+    ebegin "Starting icmpdnd"
+    start-stop-daemon --start --quiet --exec /usr/sbin/icmpdnd
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping icmpdnd"
+    start-stop-daemon --stop --quiet --exec /usr/sbin/icmpdnd
+    eend $?
+}
