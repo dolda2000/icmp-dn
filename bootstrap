@@ -1,0 +1,3 @@
+#! /bin/sh
+
+aclocal$AUTOMAKE_VERSION && autoheader && automake$AUTOMAKE_VERSION --add-missing --copy && autoconf
