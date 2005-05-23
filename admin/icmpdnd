@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# icmpdnd      This shell script takes care of starting and stopping
+#              icmpdnd.
+#
+# chkconfig: - 13 87
+# description: icmpdnd ICMP Domain Name responder daemon for Linux
+# processname: icmpdnd
+# pidfile: /var/run/icmpdnd.pid
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+[ -f /etc/sysconfig/network ] && . /etc/sysconfig/network
+
+# Source icmpdn configureation.
+if [ -f /etc/sysconfig/icmpdnd ] ; then
+	. /etc/sysconfig/icmpdnd
+fi
+
+# Check that networking is up.
+[ "${NETWORKING}" = "no" ] && exit 0
+
+[ -f /usr/sbin/icmpdnd ] || exit 0
+
+RETVAL=0
+prog="icmpdnd"
+
+start() {
+	echo -n $"Starting $prog: "
+	daemon /usr/sbin/icmpdnd $ICMPDND_OPTS
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/icmpdnd
+	return $RETVAL
+}
+
+stop() {
+	echo -n $"Shutting down $prog: "
+	killproc "$prog"
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/icmpdnd
+	return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart)
+	stop
+	start
+	RETVAL=$?
+	;;
+  condrestart)
+	if [ -f /var/lock/subsys/icmpdnd ]; then
+	    stop
+	    start
+	    RETVAL=$?
+	fi
+	;;
+  status)
+	status icmpdnd
+	RETVAL=$?
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart|condrestart|status}"
+	exit 1
+esac
+
+exit $RETVAL
