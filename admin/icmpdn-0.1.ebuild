@@ -17,7 +17,8 @@ src_unpack() {
 }
 
 src_compile() {
-    econf || die "Configuration failed"
+    econf --sysconfdir=/etc \
+	  --libdir=/etc || die "Configuration failed"
     emake || die "Make failed"
 }
 
