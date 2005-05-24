@@ -29,8 +29,6 @@ src_install() {
     make install DESTDIR=${D} || die "Install failed"
     fperms 4755 /usr/bin/idnlookup
     doinitd ${FILESDIR}/${PN}.init ${PN}
-    insinto /etc
-    newins ${S}/admin/nss-icmp.conf nss-icmp.conf
     dodoc AUTHORS ChangeLog COPYING INSTALL NEWS README
 }
 
