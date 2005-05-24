@@ -1,3 +1,6 @@
+# Copyright 2005 Fredrik Tolf <fredrik@dolda2000.com>
+# Distributed under the terms of the GNU General Public License v2
+
 inherit eutils
 
 DESCRIPTION="ICMP Domain Name utilities"
@@ -24,6 +27,10 @@ src_compile() {
 
 src_install() {
     make install DESTDIR=${D} || die "Install failed"
+    fperms 4755 /usr/bin/idnlookup
+    doinitd ${FILESDIR}/${PN}.init ${PN}
+    insinto /etc
+    newins ${S}/admin/nss-icmp.conf nss-icmp.conf
     dodoc AUTHORS ChangeLog COPYING INSTALL NEWS README
 }
 
