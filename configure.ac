@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([icmpdn], [0.1], [fredrik@dolda2000.com])
+AC_INIT([icmpdn], [0.2], [fredrik@dolda2000.com])
 AC_CONFIG_AUX_DIR([autotools])
 AC_CONFIG_SRCDIR([src/nss-icmp.c])
 AC_CONFIG_HEADER([src/config.h])
