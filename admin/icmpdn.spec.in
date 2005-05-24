@@ -39,6 +39,7 @@ make
 [ "$RPM_BUILD_ROOT" != "/" ] && [ -d "$RPM_BUILD_ROOT" ] && rm -rf "$RPM_BUILD_ROOT"
 mkdir $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT install
+cp admin/icmpdnd "$RPM_BUILD_ROOT/etc/init.d"
 
 %post
 # $1 = 0 is remove; $1 = 1 is update
