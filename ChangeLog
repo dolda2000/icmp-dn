@@ -1,5 +1,4 @@
 2005-05-25  Fredrik Tolf  <fredrik@dolda2000.com>
 
-	* admin/portage: Added Gentoo files
 	* admin/Makefile.am: Don't install the RedHat rc script on all systems.
 	* configure.ac: Change version to 0.2
