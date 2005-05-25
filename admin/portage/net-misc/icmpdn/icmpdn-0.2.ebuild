@@ -28,8 +28,8 @@ src_compile() {
 src_install() {
     make install DESTDIR=${D} || die "Install failed"
     fperms 4755 /usr/bin/idnlookup
-    doinitd ${FILESDIR}/icmpdnd.init icmpdnd
-    dodoc AUTHORS ChangeLog COPYING INSTALL NEWS README
+    doinitd ${FILESDIR}/icmpdnd
+    dodoc AUTHORS ChangeLog COPYING INSTALL README
 }
 
 pkg_postinst() {
