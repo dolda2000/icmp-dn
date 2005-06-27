@@ -185,7 +185,7 @@ int main(int argc, char **argv)
 	case '?':
 	case ':':
 	default:
-	    fprintf(stderr, "usage: icmpdnd [-n]");
+	    fprintf(stderr, "usage: icmpdnd [-nh] [-t ttl] [-d domainname]\n");
 	    exit((c == 'h')?0:1);
 	}
     }
