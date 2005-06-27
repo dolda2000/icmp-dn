@@ -33,6 +33,10 @@
 #include "config.h"
 #endif
 
+#ifndef MAXHNAME
+#define MAXHNAME 1024
+#endif
+
 struct icmphdr {
     u_int8_t type;
     u_int8_t code;
@@ -60,29 +64,44 @@ struct rephdr {
 #define ICMP_NAMEREP 38
 
 volatile int alive;
+char myname[MAXHNAME] = "";
+
+void setname(char *newname)
+{
+    int nl;
+    
+    if(newname == NULL) {
+	if(gethostname(myname, sizeof(myname)) < 0) {
+	    perror("gethostname");
+	    exit(1);
+	}
+	nl = strlen(myname);
+	myname[nl++] = '.';
+	if(getdomainname(myname + nl, sizeof(myname) - nl) < 0) {
+	    perror("getdomainname");
+	    exit(1);
+	}
+	if(strlen(myname + nl) != 0) {
+	    nl = strlen(myname);
+	    myname[nl++] = '.';
+	}
+	myname[nl] = 0;
+    } else {
+	strcpy(myname, newname);
+	nl = strlen(myname);
+	if(myname[nl - 1] != '.') {
+	    myname[nl] = '.';
+	    myname[nl + 1] = 0;
+	}
+    }
+}
 
 size_t filldn(char *dst)
 {
     char *p, *p2, *dp;
-    char namebuf[1024];
-    int hl;
+    char namebuf[MAXHNAME];
     
-    if(gethostname(namebuf, sizeof(namebuf)) < 0) {
-	perror("gethostname");
-	exit(1);
-    }
-    hl = strlen(namebuf);
-    namebuf[hl++] = '.';
-    if(getdomainname(namebuf + hl, sizeof(namebuf) - hl) < 0) {
-	perror("getdomainname");
-	exit(1);
-    }
-    if(strlen(namebuf + hl) != 0) {
-	hl = strlen(namebuf);
-	namebuf[hl++] = '.';
-    }
-    namebuf[hl] = 0;
-    
+    strcpy(namebuf, myname);
     p = namebuf;
     dp = dst;
     while((p2 = strchr(p, '.')) != NULL) {
@@ -151,10 +170,13 @@ int main(int argc, char **argv)
     
     daemonize = 1;
     ttl = 3600;
-    while((c = getopt(argc, argv, "nht:")) != -1) {
+    while((c = getopt(argc, argv, "nht:d:")) != -1) {
 	switch(c) {
 	case 't':
 	    ttl = atoi(optarg);
+	    break;
+	case 'd':
+	    setname(optarg);
 	    break;
 	case 'n':
 	    daemonize = 0;
@@ -167,6 +189,8 @@ int main(int argc, char **argv)
 	    exit((c == 'h')?0:1);
 	}
     }
+    if(*myname == 0)
+	setname(NULL);
     
     s4 = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
     s6 = socket(PF_INET6, SOCK_RAW, IPPROTO_ICMP);
@@ -285,6 +309,6 @@ int main(int argc, char **argv)
 
 /*
  * Local Variables:
- * compile-command: "gcc -Wall -g -o icmpdnd icmpdnd.c"
+ * compile-command: "make CFLAGS='-Wall -g'"
  * End:
  */
