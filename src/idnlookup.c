@@ -279,6 +279,6 @@ int main(int argc, char **argv)
 
 /*
  * Local Variables:
- * compile-command: "gcc -Wall -g -o idnlookup idnlookup.c"
+ * compile-command: "make CFLAGS='-Wall -g'"
  * End:
  */
