@@ -4,14 +4,14 @@ Since the Linux kernel does not support the ICMP host name facilities as
 described in RFC 1788, I wrote a simple implementation in user-space.
 It comprises three parts:
 
-    * icmpdnd – The ICMP Domain Name daemon, which listens to ICMP
+    * icmpdnd - The ICMP Domain Name daemon, which listens to ICMP
       domain name requests and replies to them.
 
-    * idnlookup – A user utility to query a host for its host name over
+    * idnlookup - A user utility to query a host for its host name over
       ICMP. Like ping and all other utilities that use ICMP, it needs to
       be installed SUID root.
 
-    * libnss_icmp.so.2 – A glibc NSS module, which uses idnlookup to
+    * libnss_icmp.so.2 - A glibc NSS module, which uses idnlookup to
       perform queries for the gethostbyaddr function.
 
 General information
@@ -20,10 +20,10 @@ The NSS module caches all requests (including failures) and honors the
 TTL value sent by the responding host. It uses a configuration file called
 /etc/nss-icmp.conf, which controls different aspects of its operation:
 
-    * timeout – Sets the timeout in milliseconds for ICMP host name
+    * timeout - Sets the timeout in milliseconds for ICMP host name
       queries, by passing the -t option to idnlookup.
-    * nocache – Disables the cache.
-    * ttlnotfound – Sets the TTL for not-found cache entries is
+    * nocache - Disables the cache.
+    * ttlnotfound - Sets the TTL for not-found cache entries is
       seconds. The default is 5 minutes.
 
 Both icmpdnd and idnlookup need to run as root, due to the fact that
