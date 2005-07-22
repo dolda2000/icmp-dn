@@ -1,1 +1,2 @@
 SUBDIRS		= src admin
+EXTRA_DIST	= COPYING.LIB

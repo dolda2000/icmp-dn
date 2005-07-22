@@ -1,3 +1,7 @@
+2005-06-27  Fredrik Tolf  <fredrik@dolda2000.com>
+	* src/icmpdnd.c: Made it possible to set the name explicitly.
+	* configure.ac: Advance version to 0.3
+
 2005-05-25  Fredrik Tolf  <fredrik@dolda2000.com>
 
 	* admin/Makefile.am: Don't install the RedHat rc script on all systems.

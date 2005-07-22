@@ -1,68 +1,73 @@
 Name:		icmpdn
 Version:	@VERSION@
-Release:	1
-Vendor:		Fredrik Tolf <fredrik@dolda2000.com>
+Release:	2
 License:	LGPL for library, GPL for utilities
 Group:		System Environment/Libraries
 Summary:	ICMP host name utilities
-Source:		%name-%version.tar.gz
+Source0:	http://www.dolda2000.com/~fredrik/icmp-dn/%name-%version.tar.gz
 URL:		http://www.dolda2000.com/~fredrik/icmp-dn/
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description
-Since the Linux kernel does not support the ICMP host name facilities as
-described in RFC 1788, I wrote a simple implementation in user-space.
-It comprises three parts:
-
-    * icmpdnd – The ICMP Domain Name daemon, which listens to ICMP
-      domain name requests and replies to them.
-
-    * idnlookup – A user utility to query a host for its host name over
-      ICMP. Like ping and all other utilities that use ICMP, it needs to
-      be installed SUID root.
-
-    * libnss_icmp.so.2 – A glibc NSS module, which uses idnlookup to
-      perform queries for the gethostbyaddr function.
+icmpdn is an implementation of the RFC 1788 ICMP domain name
+facilities for Linux. It includes icmpdnd, a daemon which responds to
+ICMP domain name requests from other hosts, idnlookup, which requests
+the domain name of another host, and nss_icmp, which is a nameswitch
+module for doing reverse hostname lookups via idnlookup.
 
 %prep
 %setup
 
 %build
-CXXFLAGS="$RPM_OPT_FLAGS" CFLAGS="$RPM_OPT_FLAGS"	\
-	./configure			\
-	--prefix=%_prefix		\
-	--sysconfdir=%_sysconfdir	\
-	--libdir=/lib
-make
+%configure --libdir=/%{_lib}
+make %{?_smp_mflags}
 
 %install
-[ "$RPM_BUILD_ROOT" != "/" ] && [ -d "$RPM_BUILD_ROOT" ] && rm -rf "$RPM_BUILD_ROOT"
+rm -rf "$RPM_BUILD_ROOT"
 mkdir $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT install
-mkdir -p $RPM_BUILD_ROOT/etc/init.d
-cp admin/icmpdnd "$RPM_BUILD_ROOT/etc/init.d"
+mkdir -p $RPM_BUILD_ROOT%{_initrddir}
+install -m755 admin/icmpdnd "$RPM_BUILD_ROOT%{_initrddir}"
 
-%post
-# $1 = 0 is remove; $1 = 1 is update
+%post -p /sbin/ldconfig
 
-%postun
-# $1 = 0 is remove; $1 = 1 is update
+%postun -p /sbin/ldconfig
+
+%clean
+rm -rf "$RPM_BUILD_ROOT"
 
 %files
 %defattr(-,root,root)
-/lib/libnss_icmp.so
-/lib/libnss_icmp.la
-/lib/libnss_icmp.so.2.0.0
-/lib/libnss_icmp.so.2
+/%{_lib}/libnss_icmp.so
+/%{_lib}/libnss_icmp.la
+/%{_lib}/libnss_icmp.so.2.0.0
+/%{_lib}/libnss_icmp.so.2
 %config %{_sysconfdir}/nss-icmp.conf
 
 %attr(4755,root,root) %{_bindir}/idnlookup
 
-%{_sysconfdir}/init.d/icmpdnd
+%config %{_initrddir}/icmpdnd
 %{_sbindir}/icmpdnd
 
-%doc AUTHORS ChangeLog COPYING INSTALL NEWS README
+%doc AUTHORS ChangeLog COPYING COPYING.LIB README
 
-%clean
-[ "$RPM_BUILD_ROOT" != "/" ] && [ -d "$RPM_BUILD_ROOT" ] && rm -rf "$RPM_BUILD_ROOT"
+%changelog
+* Thu Jul 07 2005 Fredrik Tolf <fredrik@dolda2000.com>
+- Compressed the description.
+- Added COPYING.LIB, which contains the LGPL.
 
+* Thu Jun 30 2005 Fredrik Tolf <fredrik@dolda2000.com>
+- Fixed more things as from fedora-extras-list:
+- Replaced /lib with /%{_lib}
+- Run ldconfig in %post and %postun.
+- Install init script in %{_initrdddir} instead of %_{sysconfdir}.
+
+* Tue Jun 28 2005 Fredrik Tolf <fredrik@dolda2000.com>
+- Fixed a lot of things after a discussion on fedora-extras-list,
+  among other things:
+- Removed Vendor tag
+- Fixed Source tag
+- Replaced en-dashes with ASCII hyphens
+- Added SMP flags to make
+- Removed INSTALL and NEWS from %doc
+- Added this ChangeLog section.
