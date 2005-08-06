@@ -1,0 +1,101 @@
+.\"
+.\" Copyright (c) 2005 Fredrik Tolf <fredrik@dolda2000.com>
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, write to the Free
+.\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
+.\" USA.
+.\"
+.TH IDNLOOKUP 1 "06 Aug 2005" "icmpdn 0.3" "ICMP Hostname Manual"
+.SH NAME
+idnlookup \- ICMP domain name resolver
+.SH SYNOPSIS
+.B idnlookup
+[ \fB-ahT\fP ] [ \fB-t\fP \fItimeout\fP ] \fIhostname\fP
+.SH DESCRIPTION
+\fBidnlookup\fP is a utility to ask an Internet host for its fully
+qualified domain name over ICMP. If successful, it will print the
+host's domain name to standard output.
+.P
+\fIhostname\fP is the address of the Internet host to query. It can be
+either a symbolic hostname, an IPv4 address in decimal notation, or an
+IPv6 address in hexadecimal notation. If a symbolic hostname is
+specified, all its addresses are looked up and tried in order.
+.P
+The remote host must be running software which can respond to the
+requests for hostname. To the knowledge of the author, current
+BSD-based systems can do this in the kernel. Linux systems must, as of
+this writing, be running \fBicmpdnd\fP(8).
+.SH EXIT STATUS
+\fBidnlookup\fP will return 0 if the specified host was succesfully
+queried. If illegal arguments were given, or if the host could, for
+any reason, not be queried, or if another error occurred, it will
+return 1.
+.SH OPTIONS
+.TP
+.B -a
+Normally, \fBidnlookup\fP will only print the first name that the host
+returns. This option will cause all names to be printed, one per
+line.
+.TP
+.B -h
+Print a brief usage message and exit.
+.TP
+.B -T
+Write the time-to-live in seconds that the remote host suggests on the
+first line, before any names.
+.TP
+.B -t
+Print an error message and exit if the remote host does not reply in
+\fItimeout\fP milliseconds. The default is 3 seconds. Note that this
+timeout will apply to all addresses, in case a symbolic hostname
+resolves to more than one address.
+.SH SECURITY
+Since \fBidnlookup\fP uses ICMP, it needs to run as root. Normally, it
+should be installed set-uid root in order for any user to be able to
+ask hosts for their names. Although the author believes
+\fBidnlookup\fP to be safe to install as set-uid root, he makes no
+guarantees.
+.SH BUGS
+\fBidnlookup\fP does not yet implement domain name decompression, and
+as such will scream and die at the sight of such names. This is
+because the author is not sure from which point in the ICMP datagrams
+the offsets specified in compressed domain names is to be counted. If
+you have information on this, please mail the author. Until then, this
+bug will hopefully not pose any large problems, since probably only
+very few hosts will return more than one name, and then there is
+little chance to compress it.
+.P
+Currently, there is a bug in the GNU libc implementation of
+\fBgetaddrinfo\fP(3), which may cause addresses resolved from a
+symbolic hostname to be returned in the wrong order (i.e. not
+consistent with RFC 3484). This will in turn cause \fBidnlookup\fP to
+try addresses in the wrong order, if the hostname in question triggers
+the \fBgetaddrinfo\fP(3) bug. This will normally not pose a problem,
+but not too uncommonly, this will cause IPv4 addresses to be sorted
+before IPv6 addresses. If the remote host listens for ICMP hostname
+requests only on IPv6 (or if the Internet service provider for the
+remote host blocks ICMP packets, which is wrong, but unfortunately not
+all too uncommon), \fBidnlookup\fP will have to time out on the IPv4
+address before being able to query the IPv6 address. The author has
+reported this bug the GNU libc Bugzilla and published a patch to fix
+it, but the developers of GNU libc have yet to take action.
+.SH AUTHOR
+Fredrik Tolf <fredrik@dolda2000.com>
+.SH SEE ALSO
+\fBicmpdnd\fP(8), \fIRFC 1788\fP
