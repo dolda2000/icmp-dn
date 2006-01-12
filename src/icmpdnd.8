@@ -1,0 +1,57 @@
+.\"
+.\" Copyright (c) 2006 Fredrik Tolf <fredrik@dolda2000.com>
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, write to the Free
+.\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
+.\" USA.
+.\"
+.TH ICMPDND 8 "12 Jan 2006" "icmpdn 0.3" "ICMP Hostname Manual"
+.SH NAME
+icmpdnd - ICMP domain name responder
+.SH SYNOPSIS
+.B icmpdnd
+[ \fB-nh\fP ] [ \fB-t\fP \fIttl\fP ] [ \fB-d\fP \fIdomainname\fP ]
+.SH DESCRIPTION
+\fBicmpdnd\fP is daemon that answers ICMP host name requests. It is
+capable of handling requests over both IPv4 and IPv6.
+.P
+When called without arguments, \fBicmpdnd\fP will answer requests with
+the host name that is specified in the operating system through the
+\fBsethostname\fP(2) and \fBsetdomainname\fP(2) calls. On GNU/Linux,
+these are normally called by the \fBhostname\fP(1) program.
+.SH OPTIONS
+.TP
+.B -h
+Print a brief usage message and exit.
+.TP
+.B -n
+Do not daemonize, but continue to run on the calling terminal.
+.TP
+.B -t
+Set the TTL (Time-to-Live) value in responses to \fIttl\fP seconds,
+rather than the default of 3600 seconds.
+.TP
+.B -d
+Set the domain name in responses to \fIdomainname\fP, rather than the
+default as described above. This option is useful in case the system
+is not configured to set up its own hostname.
+.SH AUTHOR
+Fredrik Tolf <fredrik@dolda2000.com>
+.SH SEE ALSO
+\fBidnlookup\fP(1), \fBhostname\fP(1), \fIRFC 1788\fP
