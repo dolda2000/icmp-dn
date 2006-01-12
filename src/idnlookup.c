@@ -78,6 +78,10 @@ void printdn(FILE *f, unsigned char *dnbuf, size_t size, int onlyfirst)
 		fprintf(stderr, "domain name decompression not implemented, aborting\n");
 		exit(1);
 	    }
+	    if((int)*p + (p - dnbuf) >= size) {
+		fprintf(stderr, "malformed domain name\n");
+		return;
+	    }
 	    fprintf(f, "%.*s", (int)*p, p + 1);
 	    p += 1 + (int)*p;
 	    if(*p != 0)
