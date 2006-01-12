@@ -1,0 +1,50 @@
+.\"
+.\" Copyright (c) 2006 Fredrik Tolf <fredrik@dolda2000.com>
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, write to the Free
+.\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
+.\" USA.
+.\"
+.TH NSS-ICMP 7 "12 Jan 2006" "icmpdn 0.3" "ICMP Hostname Manual"
+.SH NAME
+nss-icmp - A nameservice hostname module for ICMP
+.SH DESCRIPTION
+The \fBnss-icmp\fP nameservice module provides reverse hostname lookup
+over ICMP. If installed in \fB/etc/nsswitch.conf\fP, it will act on
+programs calling \fBgethostbyaddr\fP(3) and related functions and
+attempt to request the specified host's fully qualified domain name
+over ICMP.
+.P
+In order to do so, \fBnss-icmp\fP relies on the \fBidnlookup\fP(1)
+program being installed on the system. It also implements a cache,
+which will remember the remote host's response for as long as the TTL
+(Time-to-Live) value in the response specifies. It will also remember
+non-responsive hosts, so that time-outs will not have to happen twice.
+.P
+The first time \fBnss-icmp\fP is called, it will read a configuration
+file, which by default will be named \fB/etc/nss-icmp.conf\fP
+(although this name can be changed during compilation). The
+configuration file specifies certain parameters to control how
+\fBnss-icmp\fP operates. Its file format is described in the
+\fBnss-icmp.conf\fP(5) man page.
+.SH AUTHOR
+Fredrik Tolf <fredrik@dolda2000.com>
+.SH SEE ALSO
+\fBidnlookup\fP(1), \fBicmpdnd\fP(8), \fBnsswitch.conf\fP(5),
+\fBnss-icmp.conf\fP(5), \fIRFC 1788\fP
