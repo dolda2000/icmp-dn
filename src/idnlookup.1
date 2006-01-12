@@ -96,6 +96,11 @@ all too uncommon), \fBidnlookup\fP will have to time out on the IPv4
 address before being able to query the IPv6 address. This bug has been
 fixed since, but as of this writing, only a few systems run the fixed
 version of glibc.
+.SH NOTES
+The ICMP hostname tools also ship with a nameswitch module for ICMP
+hostname lookups, which can be used to automatically look up hostnames
+over ICMP when a program calls \fBgethostbyaddr\fP(3) or any related
+function. See the \fBnss-icmp\fP(7) man page for more information.
 .SH AUTHOR
 Fredrik Tolf <fredrik@dolda2000.com>
 .SH SEE ALSO
