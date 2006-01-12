@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([icmpdn], [0.3], [fredrik@dolda2000.com])
+AC_INIT([icmpdn], [0.4], [fredrik@dolda2000.com])
 AC_CONFIG_AUX_DIR([autotools])
 AC_CONFIG_SRCDIR([src/nss-icmp.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -40,5 +40,13 @@ AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([dup2 gethostname gettimeofday memset socket strchr])
 
-AC_CONFIG_FILES([Makefile src/Makefile admin/Makefile admin/icmpdn.spec])
+AC_CONFIG_FILES([
+Makefile
+src/Makefile
+admin/Makefile
+admin/icmpdn.spec
+src/idnlookup.1
+src/nss-icmp.conf.5
+src/nss-icmp.7
+src/icmpdnd.8])
 AC_OUTPUT
