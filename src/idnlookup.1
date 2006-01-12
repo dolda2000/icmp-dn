@@ -81,7 +81,8 @@ bug will hopefully not pose any large problems, since probably only
 very few hosts will return more than one name, and then there is
 little chance to compress it.
 .P
-Currently, there is a bug in the GNU libc implementation of
+Some GNU/Linux distributions still ship with a GNU C library
+implementation that has a bug in the implementation of
 \fBgetaddrinfo\fP(3), which may cause addresses resolved from a
 symbolic hostname to be returned in the wrong order (i.e. not
 consistent with RFC 3484). This will in turn cause \fBidnlookup\fP to
@@ -92,9 +93,9 @@ before IPv6 addresses. If the remote host listens for ICMP hostname
 requests only on IPv6 (or if the Internet service provider for the
 remote host blocks ICMP packets, which is wrong, but unfortunately not
 all too uncommon), \fBidnlookup\fP will have to time out on the IPv4
-address before being able to query the IPv6 address. The author has
-reported this bug the GNU libc Bugzilla and published a patch to fix
-it, but the developers of GNU libc have yet to take action.
+address before being able to query the IPv6 address. This bug has been
+fixed since, but as of this writing, only a few systems run the fixed
+version of glibc.
 .SH AUTHOR
 Fredrik Tolf <fredrik@dolda2000.com>
 .SH SEE ALSO
