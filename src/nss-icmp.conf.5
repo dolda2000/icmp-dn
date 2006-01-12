@@ -1,0 +1,57 @@
+.\"
+.\" Copyright (c) 2006 Fredrik Tolf <fredrik@dolda2000.com>
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, write to the Free
+.\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
+.\" USA.
+.\"
+.TH NSS-ICMP.CONF 5 "12 Jan 2006" "icmpdn 0.3" "ICMP Hostname Manual"
+.SH NAME
+nss-icmp.conf - Configuration file for the nss-icmp nameswitch module
+.SH DESCRIPTION
+\fB/etc/nss-icmp.conf\fP is an ASCII file which controls certain
+operating parameters for the \fBnss-icmp\fP(7) nameswitch module. Each
+line in the file takes the form of a key-value pair, seperated by
+whitespace. Some keys may not have a value. Lines beginning with a
+hash sign (#) are interpreted as comments, and thus ignored.
+.P
+Valid entries are:
+.TP
+\fBtimeout\fP \fImilliseconds\fP
+Instructs \fBnss-icmp\fP to pass the -t option to \fBidnlookup\fP(1),
+which changes the default time-out for nonresponsive hosts to the
+specified number of milliseconds.
+.TP
+\fBttlnotfount\fP \fIseconds\fP
+Specifies the TTL (Time-to-Live) value to use when caching a
+non-responsive host. In other word, if a host is found to be
+non-responsive (i.e. times out), the same address will not retried
+again until the specified time has passed, as to prevent annoying
+time-outs.
+.TP
+\fBnocache\fP
+If this directive is present, \fBnss-icmp\fP will not use its
+cache. Since this makes reverse hostname lookups slower, especially in
+the case of non-responsive hosts, the use of this directive is
+generally not recommended, but may be useful in certain debugging
+situtations.
+.SH AUTHOR
+Fredrik Tolf <fredrik@dolda2000.com>
+.SH SEE ALSO
+\fBnss-icmp\fP(7), \fBidnlookup\fP(1), \fIRFC 1788\fP
