@@ -1,6 +1,6 @@
 Name:		icmpdn
 Version:	@VERSION@
-Release:	2
+Release:	1
 License:	LGPL for library, GPL for utilities
 Group:		System Environment/Libraries
 Summary:	ICMP host name utilities
@@ -43,6 +43,10 @@ rm -rf "$RPM_BUILD_ROOT"
 /%{_lib}/libnss_icmp.so.2.0.0
 /%{_lib}/libnss_icmp.so.2
 %config %{_sysconfdir}/nss-icmp.conf
+%{_mandir}/man1/idnlookup.*
+%{_mandir}/man5/nss-icmp.conf.*
+%{_mandir}/man7/nss-icmp.*
+%{_mandir}/man8/icmpdnd.*
 
 %attr(4755,root,root) %{_bindir}/idnlookup
 
@@ -52,6 +56,9 @@ rm -rf "$RPM_BUILD_ROOT"
 %doc AUTHORS ChangeLog COPYING COPYING.LIB README
 
 %changelog
+* Thu Jan 12 2006 Fredrik Tolf <fredrik@dolda2000.com>
+- Added man pages to RPM
+
 * Thu Jul 07 2005 Fredrik Tolf <fredrik@dolda2000.com>
 - Compressed the description.
 - Added COPYING.LIB, which contains the LGPL.
