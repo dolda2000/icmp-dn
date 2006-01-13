@@ -1,3 +1,6 @@
+2006-01-13  Fredrik Tolf  <fredrik@dolda2000.com>
+	* src/*.[1-9]: Added man pages
+
 2005-06-27  Fredrik Tolf  <fredrik@dolda2000.com>
 	* src/icmpdnd.c: Made it possible to set the name explicitly.
 	* configure.ac: Advance version to 0.3
