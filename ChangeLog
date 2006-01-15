@@ -1,3 +1,8 @@
+2006-01-15  Fredrik Tolf  <fredrik@dolda2000.com>
+	* configure.ac: Bump version to 0.4
+	* admin/icmpdnd: Fixed chkconfig values to ensure that icmpdnd is
+	started after ypbind.
+
 2006-01-13  Fredrik Tolf  <fredrik@dolda2000.com>
 	* src/*.[1-9]: Added man pages
 
