@@ -3,7 +3,7 @@
 # icmpdnd      This shell script takes care of starting and stopping
 #              icmpdnd.
 #
-# chkconfig: - 13 87
+# chkconfig: - 30 70
 # description: icmpdnd ICMP Domain Name responder daemon for Linux
 # processname: icmpdnd
 # pidfile: /var/run/icmpdnd.pid
