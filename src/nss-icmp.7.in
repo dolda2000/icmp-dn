@@ -21,7 +21,7 @@
 .\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
 .\" USA.
 .\"
-.TH NSS-ICMP 7 "12 Jan 2006" "icmpdn 0.3" "ICMP Hostname Manual"
+.TH NSS-ICMP 7 "12 Jan 2006" "icmpdn @VERSION@" "ICMP Hostname Manual"
 .SH NAME
 nss-icmp - A nameservice hostname module for ICMP
 .SH DESCRIPTION
