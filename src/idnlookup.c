@@ -157,7 +157,10 @@ int main(int argc, char **argv)
     memset(&aihint, 0, sizeof(aihint));
     aihint.ai_socktype = SOCK_RAW;
     aihint.ai_protocol = IPPROTO_ICMP;
-    ret = getaddrinfo(argv[optind], NULL, &aihint, &ai);
+    if((ret = getaddrinfo(argv[optind], NULL, &aihint, &ai)) != 0) {
+	fprintf(stderr, "%s: %s\n", argv[optind], gai_strerror(ret));
+	exit(1);
+    }
     
     for(cai = ai; cai != NULL; cai = cai->ai_next) {
 	if((s = socket(cai->ai_family, SOCK_RAW, IPPROTO_ICMP)) < 0) {
