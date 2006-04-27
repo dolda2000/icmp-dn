@@ -21,7 +21,7 @@
 .\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
 .\" USA.
 .\"
-.TH IDNLOOKUP 1 "12 Jan 2006" "icmpdn 0.3" "ICMP Hostname Manual"
+.TH IDNLOOKUP 1 "12 Jan 2006" "icmpdn @VERSION@" "ICMP Hostname Manual"
 .SH NAME
 idnlookup \- ICMP domain name resolver
 .SH SYNOPSIS
