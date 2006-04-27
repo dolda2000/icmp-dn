@@ -33,35 +33,11 @@
 #include "config.h"
 #endif
 
+#include "icmpdefs.h"
+
 #ifndef MAXHNAME
 #define MAXHNAME 1024
 #endif
-
-struct icmphdr {
-    u_int8_t type;
-    u_int8_t code;
-    u_int16_t checksum;
-};
-
-struct reqhdr {
-    u_int8_t type;
-    u_int8_t code;
-    u_int16_t checksum;
-    u_int16_t id;
-    u_int16_t seq;
-};
-
-struct rephdr {
-    u_int8_t type;
-    u_int8_t code;
-    u_int16_t checksum;
-    u_int16_t id;
-    u_int16_t seq;
-    int32_t ttl;
-};
-
-#define ICMP_NAMEREQ 37
-#define ICMP_NAMEREP 38
 
 volatile int alive;
 char myname[MAXHNAME] = "";
